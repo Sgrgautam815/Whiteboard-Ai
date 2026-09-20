@@ -31,10 +31,11 @@ function Provider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  return 
-     <UserDetailContext.Provider value={{ userDetails, setUserDetails }}>
-     <div>{children}</div>
-        </UserDetailContext.Provider>
+  return (
+    <UserDetailContext.Provider value={{ userDetails, setUserDetails }}>
+      <div>{children}</div>
+    </UserDetailContext.Provider>
+  );
 }
 
 export default Provider;
