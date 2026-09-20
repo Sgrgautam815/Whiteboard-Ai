@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
 
   const email = user?.primaryEmailAddress?.emailAddress;
 
+  if(!user?.primaryEmailAddress?.emailAddress){
+    return NextResponse.json({error:'project Information missing'})
+  }
+
   if (!email) {
     return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
   }
