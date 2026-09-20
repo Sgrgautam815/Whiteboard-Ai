@@ -3,6 +3,7 @@
 import { Folder } from 'lucide-react';
 import React, { useState } from 'react';
 import Image from 'next/image';
+import CreateNewBoardDialog from './createNewBoardDialog';
 
 type Project = {
   id: number;
@@ -21,9 +22,7 @@ function ProjectList() {
           <p className="mt-2 text-sm text-gray-500 text-muted-foreground">
             Create a new project to get started.
           </p>
-          <button className="mt-4 rounded bg-blue-500 px-4 py-2 font-bold text-white transition hover:bg-blue-700">
-            + Create New Project
-          </button>
+            <CreateNewBoardDialog />
         </div>
       ) : (
         <div>
