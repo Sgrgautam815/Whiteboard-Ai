@@ -13,6 +13,7 @@ import { Archive, FolderOpen, LayoutGrid, Settings, Sparkles } from "lucide-reac
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
+import CreateNewBoardDialog from "./createNewBoardDialog";
 
 export function AppSidebar() {
   const path = usePathname();
@@ -34,10 +35,11 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="p-2">
-        <button className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500">
-          + Create New Board
-        </button>
-
+          <CreateNewBoardDialog />
+        <div className="my-4 border-t" />
+        <SidebarGroup>
+          <SidebarGroupLabel>My boards</SidebarGroupLabel>
+        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>My boards</SidebarGroupLabel>
 
@@ -61,8 +63,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
-        <button className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500">
-          + Create New Board </button>
+            <CreateNewBoardDialog />
           <div className="p-4 my-3 border rounded-md " >      
             <h2 className="text-sm flex justify-between"> 2 files created<span> total 3</span></h2>
             <progress value={66} className="h-2 mt-2" />
