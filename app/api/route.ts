@@ -9,7 +9,7 @@ export async function POST() {
   const user = await currentUser();
 
   if (!user) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const email = user.primaryEmailAddress?.emailAddress;
