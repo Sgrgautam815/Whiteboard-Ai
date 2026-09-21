@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "../node_modules/@excalidraw/excalidraw/dist/prod/index.css";
+@import "../components/ui/custom/workspace/whiteboard.css";
 
 @custom-variant dark (&:is(.dark *));
 
