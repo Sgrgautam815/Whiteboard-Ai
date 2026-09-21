@@ -5,9 +5,10 @@ import {
   Excalidraw,
 } from "@excalidraw/excalidraw";
 import { useParams } from "next/navigation";
-import { ArrowRight, Circle, Diamond, Eraser, Hand, Image as ImageIcon, Minus, MousePointer2, Pencil, Square, Type } from "lucide-react";
+import { ArrowRight, Circle, Diamond, Eraser, Hand, Image as ImageIcon, Minus, MousePointer2, Pencil, Sparkles, Square, Type } from "lucide-react";
 import { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import FloatingProperties from "./FloatingProerties";
+import AIFloatingSiderbar from "./AIFloatingSiderbar";
 
 
 const tools =[{
@@ -77,14 +78,20 @@ const tools =[{
 
 ]
 
+type Props = {
+    onApiReady: (api: ExcalidrawImperativeAPI) => void;
+};
 
-function Whiteboard() {
+
+
+function Whiteboard({ onApiReady }: Props) {
      const [excalidrawAPI, setExcalidRawAPI] = useState<ExcalidrawImperativeAPI|null>(null);
      const  savetimeRef = useRef<any>(null);
     const { projectId } = useParams<{ projectId: string }>();
     const [activeTool,setActiveTool]=useState('selection');
     const [selectedElement, setselectedElement]=useState<any>(null);
     const [canvasState, setCanvasState]=useState<any>(null);
+    const [ShowAiSidebar,setShowAiSidebar]=useState(false);
 
       const handleCanvasChange=(elements:readonly any[],appState:any ,files:any)=>{
 
@@ -259,9 +266,12 @@ function Whiteboard() {
 
   return (
     <div className="relative" style={{ height: "calc(100vh - 88px)", width: "100%" }}>
-        <Excalidraw 
-            excalidrawAPI={setExcalidRawAPI}
-              onChange={handleCanvasChange}
+        <Excalidraw
+            excalidrawAPI={(api) => {
+                setExcalidRawAPI(api);
+                onApiReady(api);
+            }}
+            onChange={handleCanvasChange}
         />
          <div className ='absolute left-4 top-1/2 z-50 -translate-y-1/2 
            flex flex-col gap-1
@@ -289,6 +299,22 @@ function Whiteboard() {
                         onBringToFront={handleBringToFront}
                         onSendToBack={handleSendToBack}
           />
+          <div className="absolute right-15 bottom-2 z-50">
+                        <button
+                            type="button"
+                            className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm shadow-md hover:bg-slate-50"
+                            onClick={()=> setShowAiSidebar(!ShowAiSidebar)}
+                        >
+                <Sparkles/>AI
+            </button>
+          </div>
+
+          {ShowAiSidebar && (
+            <AIFloatingSiderbar
+              excalidrawApi={excalidrawAPI}
+              onClose={() => setShowAiSidebar(false)}
+            />
+          )}
         
       </div>
   )

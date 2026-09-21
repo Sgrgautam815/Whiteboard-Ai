@@ -4,3 +4,6 @@
 .excalidraw .App-toolbar{
      display: none !important;
 }
+.excalidraw .App-menu_top{
+     display: none !important;
+}
