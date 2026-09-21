@@ -7,15 +7,16 @@ import { Download, Save, Share } from 'lucide-react'
 type Props = {
   selectedTab: any,
   onExport: any
+  projectName : string
 ,};
 
 
-function WorksoaceHeader({ selectedTab, onExport }: Props) {
+function WorksoaceHeader({ selectedTab, onExport, projectName }: Props) {
   return (
     <div className='p-3 border-b flex justify-between'>
         <div className='flex gap-2 items-center'>
       <Image src={'/logo.svg'} alt='logo' width={60} height={60} className='h-auto w-[60px]'/>
-      <h2>Workspace name </h2>
+      <h2>{projectName}</h2>
       </div>
         {/* switch */}
       <div>
