@@ -7,6 +7,8 @@ import {
 import { useParams } from "next/navigation";
 import { ArrowRight, Circle, Diamond, Eraser, Hand, Image as ImageIcon, Minus, MousePointer2, Pencil, Square, Type } from "lucide-react";
 import { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import FloatingProperties from "./FloatingProerties";
+
 
 const tools =[{
     name:'selection',
@@ -81,8 +83,26 @@ function Whiteboard() {
      const  savetimeRef = useRef<any>(null);
     const { projectId } = useParams<{ projectId: string }>();
     const [activeTool,setActiveTool]=useState('selection');
+    const [selectedElement, setselectedElement]=useState<any>(null);
+    const [canvasState, setCanvasState]=useState<any>(null);
 
       const handleCanvasChange=(elements:readonly any[],appState:any ,files:any)=>{
+
+         setCanvasState(appState);
+
+        //fine selected Elements
+        const selectedIds=Object.keys(
+            appState.selectedElementIds || {}
+        ) 
+        if(selectedIds.length===1){
+            const element=elements.find(
+                (element)=>element.id==selectedIds[0]
+            )
+            setselectedElement(element);
+        }else{
+            setselectedElement(null);
+        }
+
         // cancel 
         if(savetimeRef?.current){
             clearTimeout(savetimeRef.current)
@@ -125,9 +145,120 @@ function Whiteboard() {
         })
       }
 
+    const getFloatingPosition=()=>{
+        if(!selectedElement || !canvasState){
+            return {left:0,top:0}
+        }
+        const zoom = canvasState.zoom?.value ?? 1
+        const  scrollX= canvasState.scrollX?.value ?? 0
+        const scrollY = canvasState.scrollY?.value ?? 0
+
+        const centerX = 
+             selectedElement.x+selectedElement.width / 2
+
+
+        const screenX =
+                (centerX + scrollX) * zoom
+        
+         const screenY =
+                (selectedElement.y + scrollY) * zoom
+
+        return {
+            left:screenX,
+            top: screenY-60
+        }
+     }
+         const handlePropertyChange=(property:string,value:unknown)=>{
+        if(!excalidrawAPI|| !selectedElement) return ;
+
+                const elements=excalidrawAPI.getSceneElements();
+                const updatedElements=elements.map((element)=>{
+                        if(element.id !== selectedElement.id){
+                                return element;
+            }
+        
+        return{
+                        ...element,
+            [property]:value,
+            version:element.version+1,
+                        updated:Date.now(),
+                        versionNonce:Math.floor(Math.random() * 2147483647),
+        }
+     });
+
+         excalidrawAPI.updateScene({
+             elements: updatedElements,
+             appState: {
+                 selectedElementIds: { [selectedElement.id]: true },
+             },
+         });
+    }
+
+        const handleDuplicate = () => {
+            if (!excalidrawAPI || !selectedElement) return;
+
+            const duplicate = {
+                ...selectedElement,
+                id: crypto.randomUUID(),
+                x: Number(selectedElement.x ?? 0) + 20,
+                y: Number(selectedElement.y ?? 0) + 20,
+                version: 1,
+                versionNonce: Math.floor(Math.random() * 2147483647),
+                isDeleted: false,
+            };
+
+            excalidrawAPI.updateScene({
+                elements: [...excalidrawAPI.getSceneElements(), duplicate],
+                appState: { selectedElementIds: { [duplicate.id]: true } },
+            });
+        };
+
+        const handleToggleLock = () => {
+            handlePropertyChange("locked", !Boolean(selectedElement?.locked));
+        };
+
+        const handleDelete = () => {
+            if (!excalidrawAPI || !selectedElement) return;
+
+            excalidrawAPI.updateScene({
+                elements: excalidrawAPI
+                    .getSceneElements()
+                    .filter((element) => element.id !== selectedElement.id),
+                appState: { selectedElementIds: {} },
+            });
+        };
+
+        const handleBringToFront = () => {
+            if (!excalidrawAPI || !selectedElement) return;
+
+            const elements = excalidrawAPI.getSceneElements();
+            const selected = elements.find((element) => element.id === selectedElement.id);
+            if (!selected) return;
+
+            excalidrawAPI.updateScene({
+                elements: [...elements.filter((element) => element.id !== selected.id), selected],
+                appState: { selectedElementIds: { [selected.id]: true } },
+            });
+        };
+
+        const handleSendToBack = () => {
+            if (!excalidrawAPI || !selectedElement) return;
+
+            const elements = excalidrawAPI.getSceneElements();
+            const selected = elements.find((element) => element.id === selectedElement.id);
+            if (!selected) return;
+
+            excalidrawAPI.updateScene({
+                elements: [selected, ...elements.filter((element) => element.id !== selected.id)],
+                appState: { selectedElementIds: { [selected.id]: true } },
+            });
+        };
+
+     const floatingPosition =getFloatingPosition();
+     
 
   return (
-     <div style={{ height: "calc(100vh - 88px)", width: "100%" }}>
+    <div className="relative" style={{ height: "calc(100vh - 88px)", width: "100%" }}>
         <Excalidraw 
             excalidrawAPI={setExcalidRawAPI}
               onChange={handleCanvasChange}
@@ -148,6 +279,17 @@ function Whiteboard() {
                 )
           })}
        </div>
+          <FloatingProperties
+            selectedElement={selectedElement}
+            position={floatingPosition}
+                        onPropertyChange={handlePropertyChange}
+                        onDuplicate={handleDuplicate}
+                        onToggleLock={handleToggleLock}
+                        onDelete={handleDelete}
+                        onBringToFront={handleBringToFront}
+                        onSendToBack={handleSendToBack}
+          />
+        
       </div>
   )
 }
