@@ -43,7 +43,7 @@ export default function Home() {
         </div>
 
         <h1 style={styles.heroTitle}>
-          Gautam Kumar{' '}
+          Launch Your Next SaaS{' '}
           <span style={styles.gradientText}>10x Faster</span>
         </h1>
 
