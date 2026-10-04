@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node -e \"require('child_process').fork('collaboration-server.js')\" & next dev",
+    "collab": "node collaboration-server.js",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
@@ -36,6 +37,8 @@
     "react-dom": "^19.3.0",
     "react-resizable-panels": "^4.12.4",
     "recharts": "^3.8.0",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
     "tailwind-merge": "^3.6.0",
     "tw-animate-css": "^1.4.0"
   },

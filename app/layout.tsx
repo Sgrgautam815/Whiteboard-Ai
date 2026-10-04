@@ -11,6 +11,10 @@ const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: "Next.js Premium Startup Boilerplate",
   description: "Created using the ultimate interactive Next.js stack generator CLI.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 const isClerkConfigured = 
@@ -34,7 +38,7 @@ export default function RootLayout({
 
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body style={{ margin: 0, padding: 0 }}>
           <Provider>
               {children}

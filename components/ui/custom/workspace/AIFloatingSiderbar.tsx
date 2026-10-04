@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Monitor,
   Network,
@@ -21,6 +21,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 type Props = {
   excalidrawApi: ExcalidrawImperativeAPI | null;
   onClose?: () => void;
+  onAiDiagramGenerated?: (elements: any[]) => void;
 };
 
 const AiTools = [
@@ -125,10 +126,12 @@ const wrapText = (text: string, maxChars = 18) => {
   return lines.slice(0, 3).join("\n");
 };
 
-function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
+function AIFloatingSiderbar({ excalidrawApi, onClose, onAiDiagramGenerated }: Props) {
   const [selectedTool, setSelectedTool] = useState("Generate Diagrams");
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const pendingAiOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const placeholderElementIdsRef = useRef<Set<string>>(new Set());
   const getEmptyCanvasPosition = () => {
     if (!excalidrawApi) {
       return { x: 100, y: 100 };
@@ -209,7 +212,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
     };
   };
 
-  const renderAIDiagram = (diagram: AIDiagram) => {
+  const renderAIDiagram = (diagram: AIDiagram, originOverride?: { x: number; y: number } | null) => {
     if (!excalidrawApi) return;
 
     const aiElements = Array.isArray(diagram?.elements) ? diagram.elements : [];
@@ -218,8 +221,8 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
 
     const existingElements = excalidrawApi
       .getSceneElements()
-      .filter((element) => !Object.values(AI_PLACEHOLDER_IDS).includes(element.id));
-    const origin = getEmptyCanvasPosition();
+      .filter((element) => !isAiPlaceholderElement(element));
+    const origin = originOverride ?? getEmptyCanvasPosition();
     const getNode = (id: string) => aiElements.find((element) => element.id === id);
     const generatedElements: any[] = [];
 
@@ -328,12 +331,15 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
 
     excalidrawApi.updateScene({ elements: allElements });
     excalidrawApi.scrollToContent(convertedElements, { fitToContent: true, animate: true });
+    onAiDiagramGenerated?.(allElements);
+    placeholderElementIdsRef.current = new Set();
   };
 
   const addAiPlaceholder = () => {
-    if (!excalidrawApi) return;
+    if (!excalidrawApi) return null;
 
     const position = getEmptyCanvasPosition();
+    pendingAiOriginRef.current = position;
     const titleText = prompt.trim() || `${selectedTool} idea`;
     const subtitleText = `AI draft for: ${titleText}`;
 
@@ -353,6 +359,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         roundness: {
           type: 3,
         },
+        customData: { aiPlaceholder: true },
       },
       {
         type: "text",
@@ -362,6 +369,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         text: `Generating ${selectedTool}`,
         fontSize: 22,
         strokeColor: "#6d28d9",
+        customData: { aiPlaceholder: true },
       },
       {
         type: "text",
@@ -371,6 +379,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         text: subtitleText,
         fontSize: 15,
         strokeColor: "#6d7280",
+        customData: { aiPlaceholder: true },
       },
       {
         type: "rectangle",
@@ -386,6 +395,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         roundness: {
           type: 3,
         },
+        customData: { aiPlaceholder: true },
       },
        {
         type: "rectangle",
@@ -401,6 +411,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         roundness: {
           type: 3,
         },
+        customData: { aiPlaceholder: true },
       },
       {
         type: "rectangle",
@@ -416,10 +427,12 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         roundness: {
           type: 3,
         },
+        customData: { aiPlaceholder: true },
       },
     ]);
 
     const currentElements = excalidrawApi.getSceneElements();
+    placeholderElementIdsRef.current = new Set(placeholderElements.map((element) => element.id));
 
     excalidrawApi.updateScene({
       elements: [...currentElements, ...placeholderElements],
@@ -427,6 +440,9 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         selectedElementIds: { [AI_PLACEHOLDER_IDS.container]: true },
       },
     });
+    excalidrawApi.scrollToContent(placeholderElements, { fitToContent: true, animate: true });
+
+    return position;
   };
 
   const onClickGenerate = async () => {
@@ -447,7 +463,7 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
       return;
     }
 
-    addAiPlaceholder();
+    const placeholderOrigin = addAiPlaceholder();
     setLoading(true);
 
     try {
@@ -476,11 +492,13 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
         throw new Error("AI returned no diagram elements");
       }
 
-      renderAIDiagram(result.diagramResult);
+      renderAIDiagram(result.diagramResult, placeholderOrigin ?? pendingAiOriginRef.current);
+      pendingAiOriginRef.current = null;
 
       onClose?.();
     } catch (error) {
       removeAiPlaceholder();
+      pendingAiOriginRef.current = null;
       console.error(error);
       toast.add({
         title: "Unable to generate diagram",
@@ -495,13 +513,25 @@ function AIFloatingSiderbar({ excalidrawApi, onClose }: Props) {
   const removeAiPlaceholder = () => {
     if (!excalidrawApi) return;
 
-    const placeholderIds = Object.values(AI_PLACEHOLDER_IDS);
     const elements = excalidrawApi.getSceneElements();
     const updatedElements = elements.filter(
-      (element) => !placeholderIds.includes(element.id),
+      (element) => !isAiPlaceholderElement(element),
     );
 
     excalidrawApi.updateScene({ elements: updatedElements });
+    placeholderElementIdsRef.current = new Set();
+  };
+
+  const isAiPlaceholderElement = (element: { id?: string; customData?: unknown }) => {
+    const customData = element.customData && typeof element.customData === "object"
+      ? element.customData as Record<string, unknown>
+      : {};
+
+    return (
+      Boolean(element.id && placeholderElementIdsRef.current.has(element.id)) ||
+      customData.aiPlaceholder === true ||
+      Boolean(element.id && Object.values(AI_PLACEHOLDER_IDS).includes(element.id))
+    );
   };
 
 

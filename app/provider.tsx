@@ -2,6 +2,7 @@
 
 import { UserDetailContext } from "@/context/UserDetailContext";
 import { useAuth } from "@clerk/nextjs";
+import { ThemeProvider } from "next-themes";
 import React, { useEffect } from "react";
 
 function Provider({ children }: { children: React.ReactNode }) {
@@ -36,9 +37,19 @@ function Provider({ children }: { children: React.ReactNode }) {
   }, [isSignedIn]);
 
   return (
-    <UserDetailContext.Provider value={{ userDetails, setUserDetails }}>
-      <div>{children}</div>
-    </UserDetailContext.Provider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      storageKey="app_theme"
+      disableTransitionOnChange={false}
+    >
+      <UserDetailContext.Provider value={{ userDetails, setUserDetails }}>
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+          {children}
+        </div>
+      </UserDetailContext.Provider>
+    </ThemeProvider>
   );
 }
 
