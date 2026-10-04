@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import "@excalidraw/excalidraw/index.css";
-import { convertToExcalidrawElements, Excalidraw } from "@excalidraw/excalidraw";
+import { convertToExcalidrawElements, Excalidraw, exportToBlob } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { useParams } from "next/navigation";
 import { ArrowRight, Circle, Diamond, Eraser, Hand, Image as ImageIcon, Minus, MousePointer2, Pencil, Plus, Sparkles, Square, Type } from "lucide-react";
@@ -45,8 +45,63 @@ function Whiteboard({ onApiReady }: Props) {
   }, []);
 
   const saveCanvasChanges = async (elements: readonly any[], appState: any, files: any) => {
-    await fetch("/api/whiteboard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ elements, appState, files, projectId }) });
+
+    const base64ImagePreview= await generatePreviewBase64();
+
+    await fetch("/api/whiteboard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ elements, appState, files, 
+        projectId,
+        base64ImagePreview
+     }) });
   };
+
+    
+          const generatePreviewBase64 = async () => {
+                    if (!excalidrawAPI) return null;
+
+            const elements = excalidrawAPI.getSceneElements();
+
+            if (!elements.length) return null;
+
+            const appState = excalidrawAPI.getAppState();
+                         const files = excalidrawAPI.getFiles();
+
+                  const blob = await exportToBlob({
+                          elements,
+                           appState: {
+                          ...appState,
+                         exportBackground: true,
+                         exportWithDarkMode: false,
+                          },
+                         files,
+                         mimeType: "image/webp",
+                         quality: 0.5,
+                         getDimensions: () => ({
+                         width: 400,
+                          height: 225,
+                        scale: 1,
+                    }),
+                 });
+
+                return await blobToBase64(blob);
+            };
+
+
+           
+           const blobToBase64 = (blob: Blob): Promise<string> => {
+             return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+               reader.onload = () =>
+               resolve(reader.result as string);
+               
+               reader.onerror = reject;
+
+                   reader.readAsDataURL(blob);
+                });
+            };
+
+
+
 
   const handleCanvasChange = (elements: readonly any[], appState: any, files: any) => {
     setCanvasState(appState);
