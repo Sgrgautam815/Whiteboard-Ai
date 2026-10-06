@@ -3,6 +3,7 @@
 import WorksoaceHeader from "@/components/ui/custom/workspace/WorksoaceHeader";
 import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback } from "react";
+import { exportToBlob } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { useParams } from "next/navigation";
 import axios from "axios";
